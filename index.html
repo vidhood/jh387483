@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>ShortLink Premium</title>
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:Arial,sans-serif;
+}
+
+body{
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:
+    linear-gradient(
+        135deg,
+        #020617,
+        #0f172a,
+        #1e293b
+    );
+    overflow:hidden;
+    color:white;
+    padding:20px;
+}
+
+.container{
+    width:100%;
+    max-width:460px;
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.1);
+    backdrop-filter:blur(18px);
+    border-radius:28px;
+    padding:35px;
+    box-shadow:
+    0 10px 40px rgba(0,0,0,0.4);
+}
+
+.logo{
+    text-align:center;
+    font-size:40px;
+    font-weight:bold;
+    margin-bottom:10px;
+}
+
+.desc{
+    text-align:center;
+    color:#cbd5e1;
+    margin-bottom:30px;
+}
+
+input{
+    width:100%;
+    padding:17px;
+    border:none;
+    border-radius:16px;
+    outline:none;
+    margin-bottom:15px;
+    font-size:15px;
+}
+
+button{
+    width:100%;
+    padding:17px;
+    border:none;
+    border-radius:16px;
+    background:
+    linear-gradient(
+        135deg,
+        #3b82f6,
+        #2563eb
+    );
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+button:hover{
+    transform:translateY(-2px);
+}
+
+.result{
+    margin-top:20px;
+    background:rgba(0,0,0,0.3);
+    border-radius:16px;
+    padding:20px;
+    display:none;
+}
+
+.result a{
+    color:#38bdf8;
+    word-break:break-all;
+}
+
+.copy-btn{
+    margin-top:15px;
+    background:
+    linear-gradient(
+        135deg,
+        #10b981,
+        #059669
+    );
+}
+
+.redirect-box{
+    text-align:center;
+}
+
+.loader{
+    width:90px;
+    height:90px;
+    border-radius:50%;
+    border:6px solid rgba(255,255,255,0.1);
+    border-top:6px solid #3b82f6;
+    animation:spin 1s linear infinite;
+    margin:0 auto 25px;
+}
+
+@keyframes spin{
+    100%{
+        transform:rotate(360deg);
+    }
+}
+
+.progress{
+    width:100%;
+    height:10px;
+    background:rgba(255,255,255,0.1);
+    border-radius:20px;
+    overflow:hidden;
+    margin-top:25px;
+}
+
+.bar{
+    width:0%;
+    height:100%;
+    background:
+    linear-gradient(
+        90deg,
+        #38bdf8,
+        #2563eb
+    );
+    animation:load 1s linear forwards;
+}
+
+@keyframes load{
+    100%{
+        width:100%;
+    }
+}
+
+.small{
+    color:#94a3b8;
+    margin-top:15px;
+    font-size:14px;
+}
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    color:#64748b;
+    font-size:13px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container" id="mainContainer">
+
+<div class="logo">
+ShortLink
+</div>
+
+<p class="desc">
+Modern URL Shortener 🚀
+</p>
+
+<input
+type="url"
+id="urlInput"
+placeholder="Paste your long URL here..."
+>
+
+<button onclick="createShortLink()">
+Shorten URL
+</button>
+
+<div class="result" id="resultBox">
+
+<p>Your Short URL:</p>
+
+<br>
+
+<a href="#" target="_blank" id="shortUrl"></a>
+
+<button class="copy-btn" onclick="copyLink()">
+Copy Link
+</button>
+
+</div>
+
+<div class="footer">
+Modern link shortener 🚀
+</div>
+
+</div>
+
+<script type="module">
+
+import { initializeApp }
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+getDatabase,
+ref,
+set,
+get,
+child
+}
+from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+
+apiKey: "AIzaSyAFEqtDXNJI-O1Yn8atXjuDCAGRoQB3Y2Q",
+
+authDomain: "teknodia.firebaseapp.com",
+
+databaseURL:
+"https://teknodia-default-rtdb.firebaseio.com",
+
+projectId: "teknodia",
+
+storageBucket: "teknodia.firebasestorage.app",
+
+messagingSenderId: "4635381861",
+
+appId:
+"1:4635381861:web:d3a7b001d17fca9e37b68c",
+
+measurementId: "G-WVXTM4Y951"
+
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+function randomCode(length = 6){
+
+const chars =
+"abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+let result = "";
+
+for(let i=0;i<length;i++){
+
+result += chars.charAt(
+Math.floor(Math.random()*chars.length)
+);
+
+}
+
+return result;
+
+}
+
+window.createShortLink = async function(){
+
+const url =
+document.getElementById("urlInput").value.trim();
+
+if(!url){
+
+alert("Please enter URL");
+return;
+
+}
+
+try{
+
+new URL(url);
+
+}catch{
+
+alert("Invalid URL");
+return;
+
+}
+
+const code = randomCode();
+
+await set(
+ref(db,"links/"+code),
+{
+url:url
+}
+);
+
+const shortLink =
+window.location.origin +
+window.location.pathname +
+"?s="+code;
+
+document.getElementById(
+"resultBox"
+).style.display = "block";
+
+const shortUrl =
+document.getElementById("shortUrl");
+
+shortUrl.href = shortLink;
+
+shortUrl.innerText = shortLink;
+
+};
+
+window.copyLink = function(){
+
+const text =
+document.getElementById(
+"shortUrl"
+).innerText;
+
+navigator.clipboard.writeText(text);
+
+alert("Copied!");
+
+};
+
+async function redirectLink(){
+
+const params =
+new URLSearchParams(
+window.location.search
+);
+
+const code = params.get("s");
+
+if(!code) return;
+
+document.getElementById(
+"mainContainer"
+).innerHTML = `
+
+<div class="redirect-box">
+
+<div class="loader"></div>
+
+<h1>Preparing Destination...</h1>
+
+<p class="small">
+Redirecting you safely 🚀
+</p>
+
+<div class="progress">
+<div class="bar"></div>
+</div>
+
+</div>
+
+`;
+
+const dbRef = ref(db);
+
+const snapshot = await get(
+child(dbRef,"links/"+code)
+);
+
+if(snapshot.exists()){
+
+const data = snapshot.val();
+
+setTimeout(()=>{
+
+window.location.href = data.url;
+
+},1000);
+
+}else{
+
+document.getElementById(
+"mainContainer"
+).innerHTML = `
+
+<h1>404</h1>
+
+<p style="
+margin-top:15px;
+text-align:center;
+color:#cbd5e1;
+">
+Link not found
+</p>
+
+`;
+
+}
+
+}
+
+redirectLink();
+
+</script>
+
+</body>
+</html>
