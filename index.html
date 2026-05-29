@@ -1,10 +1,11 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>ShortLink Premium</title>
+<title>Bulk URL Shortener</title>
 
 <style>
 
@@ -16,10 +17,6 @@
 }
 
 body{
-    min-height:100vh;
-    display:flex;
-    justify-content:center;
-    align-items:center;
     background:
     linear-gradient(
         135deg,
@@ -27,18 +24,21 @@ body{
         #0f172a,
         #1e293b
     );
-    overflow:hidden;
-    color:white;
+    min-height:100vh;
+    display:flex;
+    justify-content:center;
+    align-items:center;
     padding:20px;
+    color:white;
 }
 
 .container{
     width:100%;
-    max-width:460px;
+    max-width:700px;
     background:rgba(255,255,255,0.05);
     border:1px solid rgba(255,255,255,0.1);
     backdrop-filter:blur(18px);
-    border-radius:28px;
+    border-radius:30px;
     padding:35px;
     box-shadow:
     0 10px 40px rgba(0,0,0,0.4);
@@ -46,7 +46,7 @@ body{
 
 .logo{
     text-align:center;
-    font-size:40px;
+    font-size:42px;
     font-weight:bold;
     margin-bottom:10px;
 }
@@ -54,24 +54,26 @@ body{
 .desc{
     text-align:center;
     color:#cbd5e1;
-    margin-bottom:30px;
+    margin-bottom:25px;
 }
 
-input{
+textarea{
     width:100%;
-    padding:17px;
+    height:220px;
+    padding:18px;
     border:none;
-    border-radius:16px;
+    border-radius:18px;
     outline:none;
-    margin-bottom:15px;
+    resize:none;
     font-size:15px;
+    margin-bottom:18px;
 }
 
 button{
     width:100%;
-    padding:17px;
+    padding:18px;
     border:none;
-    border-radius:16px;
+    border-radius:18px;
     background:
     linear-gradient(
         135deg,
@@ -89,26 +91,37 @@ button:hover{
 }
 
 .result{
-    margin-top:20px;
-    background:rgba(0,0,0,0.3);
-    border-radius:16px;
-    padding:20px;
+    margin-top:25px;
     display:none;
 }
 
-.result a{
+.link-item{
+    background:rgba(0,0,0,0.3);
+    padding:18px;
+    border-radius:18px;
+    margin-bottom:15px;
+}
+
+.link-item a{
     color:#38bdf8;
     word-break:break-all;
 }
 
-.copy-btn{
-    margin-top:15px;
+.copy-all{
+    margin-top:20px;
     background:
     linear-gradient(
         135deg,
         #10b981,
         #059669
     );
+}
+
+.footer{
+    margin-top:25px;
+    text-align:center;
+    color:#64748b;
+    font-size:13px;
 }
 
 .redirect-box{
@@ -161,14 +174,6 @@ button:hover{
 .small{
     color:#94a3b8;
     margin-top:15px;
-    font-size:14px;
-}
-
-.footer{
-    margin-top:25px;
-    text-align:center;
-    color:#64748b;
-    font-size:13px;
 }
 
 </style>
@@ -179,39 +184,36 @@ button:hover{
 <div class="container" id="mainContainer">
 
 <div class="logo">
-ShortLink
+Bulk ShortLink
 </div>
 
 <p class="desc">
-Modern URL Shortener 🚀
+Paste multiple URLs (1 per line) 🚀
 </p>
 
-<input
-type="url"
-id="urlInput"
-placeholder="Paste your long URL here..."
->
+<textarea
+id="bulkUrls"
+placeholder="https://google.com
+https://youtube.com
+https://chatgpt.com">
+</textarea>
 
-<button onclick="createShortLink()">
-Shorten URL
+<button onclick="generateBulkLinks()">
+Generate Short Links
 </button>
 
-<div class="result" id="resultBox">
+<div class="result" id="resultBox"></div>
 
-<p>Your Short URL:</p>
-
-<br>
-
-<a href="#" target="_blank" id="shortUrl"></a>
-
-<button class="copy-btn" onclick="copyLink()">
-Copy Link
+<button
+class="copy-all"
+id="copyAllBtn"
+style="display:none;"
+onclick="copyAllLinks()">
+Copy All Links
 </button>
-
-</div>
 
 <div class="footer">
-Modern link shortener 🚀
+Billionaire 🚀🚀🚀
 </div>
 
 </div>
@@ -275,17 +277,34 @@ return result;
 
 }
 
-window.createShortLink = async function(){
+window.generateBulkLinks = async function(){
 
-const url =
-document.getElementById("urlInput").value.trim();
+const textarea =
+document.getElementById("bulkUrls");
 
-if(!url){
+const urls =
+textarea.value
+.split("\n")
+.map(url => url.trim())
+.filter(url => url !== "");
 
-alert("Please enter URL");
+if(urls.length === 0){
+
+alert("Please enter URLs");
 return;
 
 }
+
+const resultBox =
+document.getElementById("resultBox");
+
+resultBox.innerHTML = "";
+
+resultBox.style.display = "block";
+
+let allLinks = "";
+
+for(const url of urls){
 
 try{
 
@@ -293,8 +312,7 @@ new URL(url);
 
 }catch{
 
-alert("Invalid URL");
-return;
+continue;
 
 }
 
@@ -312,29 +330,55 @@ window.location.origin +
 window.location.pathname +
 "?s="+code;
 
+allLinks += shortLink + "\n";
+
+resultBox.innerHTML += `
+
+<div class="link-item">
+
+<p>
+Original:
+</p>
+
+<br>
+
+<a href="${url}" target="_blank">
+${url}
+</a>
+
+<br><br>
+
+<p>
+Short URL:
+</p>
+
+<br>
+
+<a href="${shortLink}" target="_blank">
+${shortLink}
+</a>
+
+</div>
+
+`;
+
+}
+
+window.generatedLinks = allLinks;
+
 document.getElementById(
-"resultBox"
+"copyAllBtn"
 ).style.display = "block";
-
-const shortUrl =
-document.getElementById("shortUrl");
-
-shortUrl.href = shortLink;
-
-shortUrl.innerText = shortLink;
 
 };
 
-window.copyLink = function(){
+window.copyAllLinks = function(){
 
-const text =
-document.getElementById(
-"shortUrl"
-).innerText;
+navigator.clipboard.writeText(
+window.generatedLinks
+);
 
-navigator.clipboard.writeText(text);
-
-alert("Copied!");
+alert("All links copied!");
 
 };
 
@@ -360,7 +404,7 @@ document.getElementById(
 <h1>Preparing Destination...</h1>
 
 <p class="small">
-Redirecting you safely 🚀
+Redirecting safely 🚀
 </p>
 
 <div class="progress">
@@ -415,3 +459,4 @@ redirectLink();
 
 </body>
 </html>
+```
